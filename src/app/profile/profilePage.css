@@ -1,0 +1,35 @@
+.publish-btn{
+    background-image: url("https://raw.githubusercontent.com/robin-dela/css-mask-animation/master/img/nature-sprite.png"); /* Background image */
+    background-size: 2300% 100%; 
+    background-repeat: no-repeat; 
+    animation: ani2 0.7s steps(22) forwards;
+}
+
+.publish-btn:hover{
+    animation: ani 0.7s steps(22) forwards;
+}
+
+
+@keyframes ani {
+    from {
+     -webkit-mask-position: 0 0;
+     mask-position: 0 0;
+    }
+   
+    to {
+     -webkit-mask-position: 100% 0;
+     mask-position: 100% 0;
+    }
+}
+
+@keyframes ani2 {
+    from {
+     -webkit-mask-position: 100% 0;
+     mask-position: 100% 0;
+    }
+   
+    to {
+     -webkit-mask-position: 0 0;
+     mask-position: 0 0;
+    }
+}
