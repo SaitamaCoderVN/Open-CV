@@ -8,8 +8,9 @@ import { CustomConnectButton } from '@/components/ui/ConnectButton';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 import { useAccount, useChainId } from 'wagmi';
-import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from '@/components/contract/contracts';
+import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE, CONTRACT_ADDRESS_KAIA, BLOCK_EXPLORER_KAIA, CONTRACT_ADDRESS_KAIROS, BLOCK_EXPLORER_KAIROS } from '@/components/contract/contracts';
 import { nftAbi } from '@/components/contract/abi';
+import { nftAbiKaia } from '@/components/contract/abi-kaia';
 import { readContract } from '@wagmi/core/actions';
 import { config } from '@/components/contract/config';
 import { useEffect, useRef, useState, useContext, useCallback } from 'react';
@@ -47,6 +48,7 @@ export default function ProfilelPage() {
     const chainId = useChainId();
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     const [isOptionsVisible, setOptionsVisible] = useState(false); 
     const optionsRef = useRef<HTMLDivElement | null>(null); 
@@ -80,14 +82,30 @@ export default function ProfilelPage() {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
         case CHAINID.QUARTZ:
             contractAddress = CONTRACT_ADDRESS_QUARTZ;
             blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
             break;
         case CHAINID.UNIQUE:
             contractAddress = CONTRACT_ADDRESS_UNIQUE;
             blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
+            break;
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
+            break;
+        default:
+            abi = nftAbi;
             break;
     }
 
@@ -96,7 +114,7 @@ export default function ProfilelPage() {
         if (currentAddress) {
             try {
                 if (selectedAccount) {
-                    // Logic cho ví Polkadot
+                    // Logic for Polkadot wallet
                     const result = await chain.collection.accountTokens({
                         address: currentAddress,
                         collectionId: 4794
@@ -144,30 +162,31 @@ export default function ProfilelPage() {
 
                     setUriArray(tokenData);
                 } else {
-                    // Logic cho ví EVM
+                    // Logic for EVM wallet
                     const result = await readContract(config, {
-                        abi: nftAbi,
+                        abi: abi,
                         address: contractAddress,
                         functionName: 'getTokenIdsByOwner',
                         args: [currentAddress as `0x${string}`],
-                    });
+                    }) as bigint[];
+                    console.log(result);
                     const tokenData = await Promise.all(result.map(async (tokenId) => {
                         const uri = await readContract(config, {
-                            abi: nftAbi,
+                            abi: abi,
                             address: contractAddress,
                             functionName: 'getTokenImage',
                             args: [tokenId],
                         });
                         const uriString = ethers.toUtf8String(uri as `0x${string}`);
                         const level = await readContract(config, {
-                            abi: nftAbi,
+                            abi: abi,
                             address: contractAddress,
                             functionName: 'getTokenLevel',
                             args: [tokenId],
                         });
 
                         const codeContribute = await readContract(config, {
-                            abi: nftAbi,
+                            abi: abi,
                             address: contractAddress,
                             functionName: 'getTokenCodeContribute',
                             args: [tokenId],

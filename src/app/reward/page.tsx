@@ -1,7 +1,7 @@
 "use client";
 
 import { nftAbi } from "@/components/contract/abi";
-import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL } from "@/components/contract/contracts";
+import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL, BLOCK_EXPLORER_KAIA, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_KAIROS, BLOCK_EXPLORER_KAIROS } from "@/components/contract/contracts";
 import { CustomConnectButton } from "@/components/ui/ConnectButton";
 import Spacer from "@/components/ui/Spacer";
 import Link from "next/link";
@@ -20,6 +20,7 @@ import { ArrowDownIcon } from "lucide-react";
 import { useChainAndScan } from "@/hooks/useChainAndScan";
 import { AccountsContext } from '@/accounts/AccountsContext';
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { nftAbiKaia } from "@/components/contract/abi-kaia";
 
 function RewardPage() {
     const [codeContribute, setCodeContribute] = useState('');
@@ -34,6 +35,7 @@ function RewardPage() {
     const account = useAccount();
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     const [isOptionsVisible, setOptionsVisible] = useState(false); 
     const optionsRef = useRef<HTMLDivElement | null>(null); 
@@ -71,14 +73,28 @@ function RewardPage() {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
         case CHAINID.QUARTZ:
             contractAddress = CONTRACT_ADDRESS_QUARTZ;
             blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
             break;
         case CHAINID.UNIQUE:
             contractAddress = CONTRACT_ADDRESS_UNIQUE;
             blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
+            break;
+
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
             break;
     }
 
@@ -206,7 +222,7 @@ function RewardPage() {
             if (rewardType === 'nft') {
                 await writeContract({
                     address: contractAddress,
-                    abi: nftAbi,
+                    abi: abi,
                     functionName: "rewardByTokenId",
                     args: [BigInt(tokenIdOfNFT), BigInt(amount * 1e18)],
                     value: BigInt(amount * 1e18),
@@ -217,7 +233,7 @@ function RewardPage() {
 
                 await writeContract({
                     address: contractAddress,
-                    abi: nftAbi,
+                    abi: abi,
                     functionName: "rewardByCodeContribute",
                     args: [codeContribute as `0x${string}`, BigInt(amount * 1e18), BigInt(levelFrom), BigInt(levelTo)],
                     value: BigInt(amount * 1e18),

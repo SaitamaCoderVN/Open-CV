@@ -1,7 +1,9 @@
 "use client";
 
+import React from 'react';
 import { nftAbi } from "@/components/contract/abi";
-import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_UNIQUE, BLOCK_EXPLORER_QUARTZ, CHAINID, CONTRACT_ADDRESS_UNIQUE, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ } from "@/components/contract/contracts";
+import { nftAbiKaia } from "@/components/contract/abi-kaia";
+import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_UNIQUE, BLOCK_EXPLORER_QUARTZ, CHAINID, CONTRACT_ADDRESS_UNIQUE, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_KAIROS, BLOCK_EXPLORER_KAIA, BLOCK_EXPLORER_KAIROS } from "@/components/contract/contracts";
 import { CustomConnectButton } from "@/components/ui/ConnectButton";
 import Spacer from "@/components/ui/Spacer";
 import Link from "next/link";
@@ -53,6 +55,7 @@ function MintDynamicNFTPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     const [isOptionsVisible, setOptionsVisible] = useState(false); 
     const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -87,15 +90,30 @@ function MintDynamicNFTPage() {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
         case CHAINID.UNIQUE:
             contractAddress = CONTRACT_ADDRESS_UNIQUE;
             blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
             break;
         case CHAINID.QUARTZ:
             contractAddress = CONTRACT_ADDRESS_QUARTZ;
             blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
             break;
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
+            break;
+        default:
+            throw new Error("Unsupported chain");
     }
 
     const onDrop = useCallback((acceptedFiles) => {
@@ -203,7 +221,7 @@ function MintDynamicNFTPage() {
                 {
                     contract: {
                         address: contractAddress as string,
-                        abi: nftAbi as any
+                        abi: abi as any
                     },
                     functionName: "mint_DragonNFT",
                     functionArgs: [
@@ -239,22 +257,38 @@ function MintDynamicNFTPage() {
     const mintWithEVM = async (codeContribute: string) => {
         if (!wagmiAddress) throw new Error("EVM address not found");
 
-        await writeContract({
-            address: contractAddress as `0x${string}`,
-            abi: nftAbi,
-            functionName: "mint_DragonNFT",
-            args: [
-                { 
-                    eth: toAddress as `0x${string}`, 
-                    sub: BigInt(0) 
-                }, 
-                codeContribute, 
-                Number(level), 
-                uri
-            ],
-            chain: config[chainId],
-            account: wagmiAddress,
-        });
+        if (chainId === CHAINID.OPAL) {
+            await writeContract({
+                address: contractAddress,
+                abi: abi,
+                functionName: "mint_DragonNFT",
+                args: [
+                    { 
+                        eth: toAddress as `0x${string}`, 
+                        sub: BigInt(0) 
+                    }, 
+                    codeContribute, 
+                    Number(level), 
+                    uri
+                ],
+                chain: config[chainId],
+                account: wagmiAddress,
+            })
+        } else {
+            await writeContract({
+                address: contractAddress,
+                abi: abi,
+                functionName: "mint_DragonNFT",
+                args: [
+                    toAddress as `0x${string}`,
+                    codeContribute, 
+                    Number(level), 
+                    uri
+                ],
+                chain: config[chainId],
+                account: wagmiAddress,
+            });
+        }
     };
 
 

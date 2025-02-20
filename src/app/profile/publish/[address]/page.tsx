@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState, useContext } from 'react';
 import { nftAbi } from "@/components/contract/abi";
-import { CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from "@/components/contract/contracts";
+import { CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_KAIROS, CHAINID } from "@/components/contract/contracts";
 import { readContract } from '@wagmi/core/actions';
 import { config } from '@/components/contract/config';
 import Spacer from '@/components/ui/Spacer';
@@ -13,13 +13,50 @@ import { useAppSelector } from '@/hooks/useRedux';
 import { useChainAndScan } from '@/hooks/useChainAndScan';
 import { ethers } from 'ethers';
 import { UniqueChain } from '@unique-nft/sdk';
+import { nftAbiKaia } from '@/components/contract/abi-kaia';
 
 // Add interface to define data type
 interface TokenData {
     imageUri: string;
     level: number;
     codeContribute: string;
+    chainId: number;
 }
+
+const getChainConfig = (chainId: number) => {
+  switch (chainId) {
+    case CHAINID.OPAL:
+      return {
+        contractAddress: CONTRACT_ADDRESS_OPAL,
+        abi: nftAbi
+      };
+    case CHAINID.QUARTZ:
+      return {
+        contractAddress: CONTRACT_ADDRESS_QUARTZ,
+        abi: nftAbi
+      };
+    case CHAINID.UNIQUE:
+      return {
+        contractAddress: CONTRACT_ADDRESS_UNIQUE,
+        abi: nftAbi
+      };
+    case CHAINID.KAIA:
+      return {
+        contractAddress: CONTRACT_ADDRESS_KAIA,
+        abi: nftAbiKaia
+      };
+    case CHAINID.KAIROS:
+      return {
+        contractAddress: CONTRACT_ADDRESS_KAIROS,
+        abi: nftAbiKaia
+      };
+    default:
+      return {
+        contractAddress: CONTRACT_ADDRESS_OPAL,
+        abi: nftAbi
+      };
+  }
+};
 
 export default function PublishProfilePage() {
     const { address } = useParams();
@@ -38,109 +75,132 @@ export default function PublishProfilePage() {
         if (addressString) {
             try {
                 setIsLoading(true);
-                
-                if (!addressString.toLowerCase().startsWith("0x")) {
-                    // Logic for Polkadot address
-                    const result = await sdk.collection.accountTokens({
-                        address: addressString,
-                        collectionId: 4794
-                    });
+                let allTokenData: TokenData[] = [];
 
-                    if (!result || !Array.isArray(result)) {
-                        setTokenDataArray([]);
-                        return;
+                // Lấy danh sách chain được hỗ trợ từ config
+                const supportedChains = config.chains;
+
+                // Lặp qua từng chain để lấy NFT
+                for (const chain of supportedChains) {
+                    const { contractAddress, abi } = getChainConfig(chain.id);
+                    
+                    if (!addressString.toLowerCase().startsWith("0x")) {
+                        // Logic cho địa chỉ Polkadot
+                        try {
+                            const result = await sdk.collection.accountTokens({
+                                address: addressString,
+                                collectionId: 4794
+                            });
+
+                            if (result && Array.isArray(result)) {
+                                const tokenIds = result.map(token => token.tokenId);
+                                
+                                const tokenData = await Promise.all(tokenIds.map(async (tokenId) => {
+                                    const imageUri = await readContract(config, {
+                                        abi,
+                                        address: contractAddress,
+                                        functionName: 'getTokenImage',
+                                        args: [BigInt(tokenId)],
+                                        chainId: chain.id
+                                    });
+                                    
+                                    const level = await readContract(config, {
+                                        abi,
+                                        address: contractAddress,
+                                        functionName: 'getTokenLevel',
+                                        args: [BigInt(tokenId)],
+                                        chainId: chain.id
+                                    });
+
+                                    const codeContribute = await readContract(config, {
+                                        abi,
+                                        address: contractAddress,
+                                        functionName: 'getTokenCodeContribute',
+                                        args: [BigInt(tokenId)],
+                                        chainId: chain.id
+                                    });
+
+                                    let codeContributeString = '';
+                                    try {
+                                        codeContributeString = ethers.toUtf8String(codeContribute as `0x${string}`);
+                                    } catch (error) {
+                                        console.warn("Unable to convert codeContribute to UTF-8:", error);
+                                        codeContributeString = String(codeContribute);
+                                    }
+
+                                    return {
+                                        imageUri: ethers.toUtf8String(imageUri),
+                                        level: Number(level),
+                                        codeContribute: codeContributeString,
+                                        chainId: chain.id
+                                    };
+                                }));
+
+                                allTokenData = [...allTokenData, ...tokenData];
+                            }
+                        } catch (error) {
+                            console.warn(`Error fetching NFTs from chain ${chain.name}:`, error);
+                        }
+                    } else {
+                        // Logic cho địa chỉ EVM
+                        try {
+                            const result = await readContract(config, {
+                                abi,
+                                address: contractAddress,
+                                functionName: 'getTokenIdsByOwner',
+                                args: [addressString as `0x${string}`],
+                                chainId: chain.id
+                            });
+
+                            const tokenData = await Promise.all(result.map(async (tokenId) => {
+                                const imageUri = await readContract(config, {
+                                    abi,
+                                    address: contractAddress,
+                                    functionName: 'getTokenImage',
+                                    args: [tokenId],
+                                    chainId: chain.id
+                                });
+
+                                const level = await readContract(config, {
+                                    abi,
+                                    address: contractAddress,
+                                    functionName: 'getTokenLevel',
+                                    args: [tokenId],
+                                    chainId: chain.id
+                                });
+
+                                const codeContribute = await readContract(config, {
+                                    abi,
+                                    address: contractAddress,
+                                    functionName: 'getTokenCodeContribute',
+                                    args: [tokenId],
+                                    chainId: chain.id
+                                });
+
+                                let codeContributeString = '';
+                                try {
+                                    codeContributeString = ethers.toUtf8String(codeContribute as `0x${string}`);
+                                } catch (error) {
+                                    console.warn("Unable to convert codeContribute to UTF-8:", error);
+                                    codeContributeString = String(codeContribute);
+                                }
+
+                                return {
+                                    imageUri: ethers.toUtf8String(imageUri as `0x${string}`),
+                                    level: Number(level),
+                                    codeContribute: codeContributeString,
+                                    chainId: chain.id
+                                };
+                            }));
+
+                            allTokenData = [...allTokenData, ...tokenData];
+                        } catch (error) {
+                            console.warn(`Error fetching NFTs from chain ${chain.name}:`, error);
+                        }
                     }
-
-                    const tokenIds = result.map(token => token.tokenId);
-                    
-                    const tokenData = await Promise.all(tokenIds.map(async (tokenId) => {
-                        const imageUri = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenImage',
-                            args: [BigInt(tokenId)],
-                        });
-                        
-                        const level = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenLevel',
-                            args: [BigInt(tokenId)],
-                        });
-
-                        const codeContribute = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenCodeContribute',
-                            args: [BigInt(tokenId)],
-                        });
-                        
-                        let codeContributeString = '';
-                        try {
-                            codeContributeString = ethers.toUtf8String(codeContribute as `0x${string}`);
-                        } catch (error) {
-                            console.warn("Unable to convert codeContribute to UTF-8:", error);
-                            codeContributeString = String(codeContribute);
-                        }
-
-                        return {
-                            imageUri: ethers.toUtf8String(imageUri),
-                            level: Number(level),
-                            codeContribute: codeContributeString
-                        };
-                    }));
-
-                    setTokenDataArray(tokenData as TokenData[]);
-                } else {
-                    // Logic for EVM address
-                    const result = await readContract(config, {
-                        abi: nftAbi,
-                        address: CONTRACT_ADDRESS_OPAL,
-                        functionName: 'getTokenIdsByOwner',
-                        args: [addressString as `0x${string}`],
-                    });
-
-                    const tokenData = await Promise.all(result.map(async (tokenId) => {
-                        const imageUri = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenImage',
-                            args: [tokenId],
-                        });
-
-                        const uriString = ethers.toUtf8String(imageUri as `0x${string}`);
-                        
-                        const level = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenLevel',
-                            args: [tokenId],
-                        });
-
-                        const codeContribute = await readContract(config, {
-                            abi: nftAbi,
-                            address: CONTRACT_ADDRESS_OPAL,
-                            functionName: 'getTokenCodeContribute',
-                            args: [tokenId],
-                        });
-
-                        let codeContributeString = '';
-                        try {
-                            codeContributeString = ethers.toUtf8String(codeContribute as `0x${string}`);
-                        } catch (error) {
-                            console.warn("Unable to convert codeContribute to UTF-8:", error);
-                            codeContributeString = String(codeContribute);
-                        }
-
-                        return {
-                            imageUri: uriString,
-                            level: Number(level),
-                            codeContribute: codeContributeString
-                        };
-                    }));
-                    
-                    setTokenDataArray(tokenData);
                 }
+
+                setTokenDataArray(allTokenData);
             } catch (error) {
                 console.error("Error fetching NFTs:", error);
                 setIsError(true);
@@ -246,6 +306,7 @@ export default function PublishProfilePage() {
                                     <div className={`absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2 text-center transition-opacity duration-300 hover:bg-black/70 ${hiddenCards.has(index) || delayedVisibleCards.has(index) ? 'hidden' : ''}`}>
                                         <div>Level: {tokenData.level}</div>
                                         <div>Code Contribution: {tokenData.codeContribute}</div>
+                                        <div>Chain: {config.chains.find(chain => chain.id === tokenData.chainId)?.name || 'Unknown'}</div>
                                     </div>
                                 </div>
                             </div>

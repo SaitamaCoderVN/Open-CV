@@ -1,7 +1,7 @@
 "use client";
 
 import { nftAbi } from "@/components/contract/abi";
-import { BLOCK_EXPLORER_OPAL, CHAINID, CONTRACT_ADDRESS_OPAL } from "@/components/contract/contracts";
+import { BLOCK_EXPLORER_KAIROS, BLOCK_EXPLORER_KAIA, BLOCK_EXPLORER_UNIQUE, BLOCK_EXPLORER_QUARTZ, CHAINID, CONTRACT_ADDRESS_KAIROS, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_UNIQUE, CONTRACT_ADDRESS_QUARTZ, BLOCK_EXPLORER_OPAL, CONTRACT_ADDRESS_OPAL } from "@/components/contract/contracts";
 import { CustomConnectButton } from "@/components/ui/ConnectButton";
 import Spacer from "@/components/ui/Spacer";
 import Link from "next/link";
@@ -20,6 +20,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useChainAndScan } from "@/hooks/useChainAndScan";
 import { AccountsContext } from '@/accounts/AccountsContext';
 import { TransactionStatus } from "@/components/TransactionStatus";
+import { nftAbiKaia } from "@/components/contract/abi-kaia";
 
 const FileUploadIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} width="12" height="12" viewBox="0 0 24 24" fill="none" role="img" color="white">
@@ -52,6 +53,7 @@ function ConfigPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     const [isOptionsVisible, setOptionsVisible] = useState(false); 
     const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -85,7 +87,29 @@ function ConfigPage() {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
+        case CHAINID.QUARTZ:
+            contractAddress = CONTRACT_ADDRESS_QUARTZ;
+            blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
+            break;
+        case CHAINID.UNIQUE:
+            contractAddress = CONTRACT_ADDRESS_UNIQUE;
+            blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
+            break;
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
+            break;
+            
     }
 
     const onDrop = useCallback((acceptedFiles) => {
@@ -376,7 +400,7 @@ function ConfigPage() {
 
         await writeContract({
             address: contractAddress,
-            abi: nftAbi,
+            abi: abi,
             functionName: "setLevelImageUri",
             args: [
                 codeContribute,
@@ -485,18 +509,7 @@ function ConfigPage() {
                                     fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
                                         Reward
                                     </Link>
-                                    <Link href="/nesting" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
                                     
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Nesting
-                                    </Link>
-                                    <Link href="/unnest" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
-                                    
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Unnest
-                                    </Link>
                                 </motion.div>
                             )}
                         </AnimatePresence>

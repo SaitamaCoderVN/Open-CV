@@ -13,7 +13,7 @@ import { config } from "@/components/contract/config";
 import { nftAbi } from "@/components/contract/abi";
 import { useToast } from "@/components/ui/use-toast";
 import { BaseError, useAccount, useChainId, useWriteContract } from "wagmi";
-import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from "@/components/contract/contracts";
+import { BLOCK_EXPLORER_KAIA, BLOCK_EXPLORER_KAIROS, BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_KAIROS, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from "@/components/contract/contracts";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useChainAndScan } from "@/hooks/useChainAndScan";
@@ -22,6 +22,7 @@ import { AccountsContext } from '@/accounts/AccountsContext';
 import { useWaitForTransactionReceipt } from "wagmi";
 import { TransactionStatus } from "@/components/TransactionStatus";
 import { ArrowDownIcon } from "lucide-react";
+import { nftAbiKaia } from "@/components/contract/abi-kaia";
 
 function UpgradePage() {
     const dispatch = useAppDispatch();
@@ -69,19 +70,33 @@ function UpgradePage() {
     const chainId = useChainId();
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     switch (chainId) {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
         case CHAINID.QUARTZ:
             contractAddress = CONTRACT_ADDRESS_QUARTZ;
             blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
             break;
         case CHAINID.UNIQUE:
             contractAddress = CONTRACT_ADDRESS_UNIQUE;
             blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
+            break;
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
             break;
     }
 
@@ -178,14 +193,14 @@ function UpgradePage() {
 
         const codeContribute = await readContract(config, {
             address: contractAddress,
-            abi: nftAbi,
+            abi: abi,
             functionName: "getTokenCodeContribute",
             args: [BigInt(nftValue)],
         });
 
         await writeContract({
             address: contractAddress,
-            abi: nftAbi,
+            abi: abi,
             functionName: "setTokenLevel",
             args: [BigInt(nftValue), codeContribute, Number(nftLevel)],
             chain: config[chainId],
@@ -250,7 +265,7 @@ function UpgradePage() {
                             return [tokenId, uri, BigInt(level)] as [string | bigint, string, bigint];
                         }));
 
-                        // Lọc bỏ những NFT có level = 0
+                        // Filter out NFTs with level = 0
                         const filteredTokens = tokenUriForContributorAndLevel.filter(
                             ([_, __, level]) => level !== BigInt(0)
                         );
@@ -349,18 +364,7 @@ function UpgradePage() {
                                     fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
                                         Reward
                                     </Link>
-                                    <Link href="/nesting" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
                                     
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Nesting
-                                    </Link>
-                                    <Link href="/unnest" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
-
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Unnest
-                                    </Link>
                                 </motion.div>
                             )}
                         </AnimatePresence>

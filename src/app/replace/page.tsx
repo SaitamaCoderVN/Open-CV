@@ -18,11 +18,12 @@ import { config } from "@/components/contract/config";
 import { nftAbi } from "@/components/contract/abi";
 import { useToast } from "@/components/ui/use-toast";
 import { BaseError, useAccount, useChainId, useWriteContract } from "wagmi";
-import { BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from "@/components/contract/contracts";
+import { BLOCK_EXPLORER_KAIA, BLOCK_EXPLORER_KAIROS, BLOCK_EXPLORER_OPAL, BLOCK_EXPLORER_QUARTZ, BLOCK_EXPLORER_UNIQUE, CHAINID, CONTRACT_ADDRESS_KAIA, CONTRACT_ADDRESS_KAIROS, CONTRACT_ADDRESS_OPAL, CONTRACT_ADDRESS_QUARTZ, CONTRACT_ADDRESS_UNIQUE } from "@/components/contract/contracts";
 import { useWaitForTransactionReceipt } from "wagmi";
 import { AccountsContext } from "@/accounts/AccountsContext";
 import { useChainAndScan } from "@/hooks/useChainAndScan";
 import { ethers } from "ethers";
+import { nftAbiKaia } from "@/components/contract/abi-kaia";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { TransactionStatus } from "@/components/TransactionStatus";
@@ -48,6 +49,7 @@ function ReplacePage() {
     const chainId = useChainId();
     let contractAddress: `0x${string}` | undefined;
     let blockexplorer: string | undefined;
+    let abi: any;
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -83,14 +85,27 @@ function ReplacePage() {
         case CHAINID.OPAL:
             contractAddress = CONTRACT_ADDRESS_OPAL;
             blockexplorer = BLOCK_EXPLORER_OPAL;
+            abi = nftAbi;
             break;
         case CHAINID.UNIQUE:
             contractAddress = CONTRACT_ADDRESS_UNIQUE;
             blockexplorer = BLOCK_EXPLORER_UNIQUE;
+            abi = nftAbi;
             break;
         case CHAINID.QUARTZ:
             contractAddress = CONTRACT_ADDRESS_QUARTZ;
             blockexplorer = BLOCK_EXPLORER_QUARTZ;
+            abi = nftAbi;
+            break;
+        case CHAINID.KAIA:
+            contractAddress = CONTRACT_ADDRESS_KAIA;
+            blockexplorer = BLOCK_EXPLORER_KAIA;
+            abi = nftAbiKaia;
+            break;
+        case CHAINID.KAIROS:
+            contractAddress = CONTRACT_ADDRESS_KAIROS;
+            blockexplorer = BLOCK_EXPLORER_KAIROS;
+            abi = nftAbiKaia;
             break;
     }
 
@@ -322,7 +337,7 @@ function ReplacePage() {
 
         const codeContribute = await readContract(config, {
             address: contractAddress,
-            abi: nftAbi,
+            abi: abi,
             functionName: "getTokenCodeContribute",
             args: [
                 BigInt(nftValue),
@@ -332,7 +347,7 @@ function ReplacePage() {
 
         await writeContract({
             address: contractAddress,
-            abi: nftAbi,
+            abi: abi,
             functionName: "setImageForLevelZero",
             args: [
                 BigInt(nftValue),
@@ -544,18 +559,7 @@ function ReplacePage() {
                                     fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
                                         Reward
                                     </Link>
-                                    <Link href="/nesting" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
                                     
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Nesting
-                                    </Link>
-                                    <Link href="/unnest" className='
-                                        max-phonescreen:text-[3vw] max-phonescreen:leading-[3vw] max-phonescreen:h-[27px]
-                                    
-                                    fu-btn flex items-center justify-center bg-primary text-secondary-background font-silkscreen font-semibold h-[3vw] uppercase text-[1.5vw] leading-[1.5vw] whitespace-nowrap py-[8px] px-[10px] hover:scale-[1.05] transition-all duration-300'>
-                                        Unnest
-                                    </Link>
                                 </motion.div>
                             )}
                         </AnimatePresence>

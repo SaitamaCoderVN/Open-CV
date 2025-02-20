@@ -22,7 +22,7 @@ const { wallets } = getDefaultWallets();
 
 // Define the Unique chain
 const opalTestnet = {
-  id: 8882, // Sửa thành 8880 hoặc "0x22b0"
+  id: 8882,
   name: "Opal",
   network: "opal",
   nativeCurrency: {
@@ -71,13 +71,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
           initialChain={opalTestnet}
-          showRecentTransactions={true}
           theme={darkTheme({
             accentColor: "#b373d0",
             accentColorForeground: "white",
             borderRadius: "none",
           })}
           locale="en-US"
+          showRecentTransactions={true}
         >
           <AccountsContextProvider>
             <Provider store={store}>{children}</Provider>
